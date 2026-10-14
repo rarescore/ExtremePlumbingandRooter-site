@@ -98,7 +98,7 @@ export const sendLead = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (data.website) return { ok: true as const, emailed: true as const };
 
-    // No filesystem writes here: Vercel functions run on a read-only disk, and
+    // No filesystem writes here: Netlify functions run on a read-only disk, and
     // the old `data/leads.jsonl` append threw EROFS, failing every submission.
     try {
       const response = await fetch(FORMSUBMIT_URL, {
