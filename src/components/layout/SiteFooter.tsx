@@ -38,6 +38,7 @@ export function SiteFooter() {
             <Link to="/service-areas">Service areas</Link>
             <Link to="/about">About us</Link>
             <Link to="/our-workers">Our team</Link>
+            <Link to="/careers">Plumbers needed</Link>
             <Link to="/reviews">Reviews</Link>
             <Link to="/property-managers">HOAs & managers</Link>
             <Link to="/faq">FAQ</Link>

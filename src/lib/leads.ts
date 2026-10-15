@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { EMAIL } from "@/lib/site";
 
 export type LeadInput = {
-  kind: "service" | "estimate" | "hoa";
+  kind: "service" | "estimate" | "hoa" | "job";
   name: string;
   phone: string;
   email?: string;
@@ -19,7 +19,9 @@ const FORMSUBMIT_URL = `https://formsubmit.co/ajax/${encodeURIComponent(EMAIL)}`
 const SITE_ORIGIN = "https://www.rooter-plumber.com";
 
 function subjectFor(data: LeadInput) {
-  return data.kind === "hoa"
+  return data.kind === "job"
+    ? `Plumber application from ${data.name}`
+    : data.kind === "hoa"
     ? `HOA / property manager request from ${data.name}`
     : data.kind === "estimate"
       ? `Estimate request from ${data.name}`
@@ -77,7 +79,8 @@ function clean(value: unknown, max = 500) {
 export const sendLead = createServerFn({ method: "POST" })
   .validator((input: unknown): LeadInput => {
     const data = (input ?? {}) as Partial<LeadInput>;
-    const kind = data.kind === "estimate" || data.kind === "hoa" ? data.kind : "service";
+    const kind =
+      data.kind === "estimate" || data.kind === "hoa" || data.kind === "job" ? data.kind : "service";
     const name = clean(data.name, 120);
     const phone = clean(data.phone, 40);
     if (name.length < 2 || phone.replace(/\D/g, "").length < 10) {

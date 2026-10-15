@@ -158,6 +158,23 @@ function Home() {
           </div>
         </section>
 
+        <section className="pb-16 md:pb-20">
+          <div className="shell grid items-center gap-8 border border-line bg-navy px-6 py-8 text-cream md:grid-cols-[1.3fr_auto] md:px-10">
+            <div>
+              <p className="text-sm font-semibold tracking-[0.14em] text-brand uppercase">Employment</p>
+              <h2 className="mt-2 font-sans text-3xl font-semibold tracking-normal text-cream normal-case">
+                Plumbers needed.
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-cream/70">
+                Service, drain, and sewer work across Los Angeles. Send your name and phone. The shop reads every note.
+              </p>
+            </div>
+            <Link to="/careers" className="text-sm font-semibold tracking-wide text-cream underline-offset-4 hover:underline">
+              Apply to the crew
+            </Link>
+          </div>
+        </section>
+
         <section className="py-16 md:py-20">
           <div className="shell">
             <div className="flex items-end justify-between gap-6">

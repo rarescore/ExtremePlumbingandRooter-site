@@ -11,6 +11,7 @@ export const navLinks = [
   { label: "Service Areas", href: "/service-areas" },
   { label: "About", href: "/about" },
   { label: "Our Team", href: "/our-workers" },
+  { label: "Hiring", href: "/careers" },
   { label: "Reviews", href: "/reviews" },
   { label: "HOA Signup", href: "/property-managers" },
   { label: "FAQ", href: "/faq" },
