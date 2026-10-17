@@ -4,7 +4,7 @@ import { CtaBand } from "@/components/CtaBand";
 import { PageHero } from "@/components/layout/PageHero";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { buttonVariants } from "@/components/ui/button";
-import { PHONE_DISPLAY, PHONE_HREF, canonical, getService, services } from "@/lib/site";
+import { PHONE_DISPLAY, PHONE_HREF, SITE_URL, canonical, getService, services } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/services/$slug")({
@@ -31,9 +31,41 @@ function ServiceDetail() {
   const related = services.filter((item) => item.slug !== service.slug).slice(0, 3);
   const extraImage = service.slug === "camera-inspection" ? "/media/camera-pipe.jpg" : undefined;
 
+  const url = canonical(`/services/${service.slug}`);
+  // Page-specific Service + BreadcrumbList schema. Values come only from this page's own
+  // H1 (service.title), meta description (service.description) and canonical URL.
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Service",
+        name: service.title,
+        serviceType: service.title,
+        url,
+        description: service.description,
+        provider: {
+          "@type": "Plumber",
+          name: "Extreme Plumbing & Rooter, Inc.",
+          url: SITE_URL,
+          telephone: PHONE_HREF.replace("tel:", ""),
+        },
+        areaServed: { "@type": "City", name: "Los Angeles" },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: canonical("/") },
+          { "@type": "ListItem", position: 2, name: "Services", item: canonical("/services") },
+          { "@type": "ListItem", position: 3, name: service.title, item: url },
+        ],
+      },
+    ],
+  };
+
   return (
     <SiteShell>
       <main id="main">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
         <PageHero kicker="Free on-site estimate" title={service.title} intro={service.short} />
         <section className="py-16 md:py-24">
           <div className="shell grid items-start gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
