@@ -5,6 +5,7 @@ import { PageHero } from "@/components/layout/PageHero";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { buttonVariants } from "@/components/ui/button";
 import { PHONE_DISPLAY, PHONE_HREF, SITE_URL, canonical, getService, services } from "@/lib/site";
+import { articlesForService } from "@/lib/service-articles";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/services/$slug")({
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/services/$slug")({
 
 function ServiceDetail() {
   const { service } = Route.useLoaderData();
+  const guides = articlesForService(service.slug);
   const related = services.filter((item) => item.slug !== service.slug).slice(0, 3);
   const extraImage = service.slug === "camera-inspection" ? "/media/camera-pipe.jpg" : undefined;
 
@@ -125,6 +127,23 @@ function ServiceDetail() {
             </div>
           </div>
         </section>
+        {guides.length ? (
+          <section className="border-t border-line py-16">
+            <div className="shell">
+              <p className="kicker">Homeowner guides</p>
+              <h2 className="display mb-8 text-3xl text-navy">{service.title} guides</h2>
+              <ul className="grid gap-4 md:grid-cols-2">
+                {guides.map((item) => (
+                  <li key={item.slug}>
+                    <Link to="/articles/$slug" params={{ slug: item.slug }} className="block">
+                      <span className="block text-base font-semibold text-navy">{item.title}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        ) : null}
         <section className="border-t border-line bg-cream py-16">
           <div className="shell">
             <p className="kicker">Related services</p>
