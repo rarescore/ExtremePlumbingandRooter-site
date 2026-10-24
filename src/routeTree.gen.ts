@@ -16,6 +16,7 @@ import { Route as CareersRouteImport } from './routes/careers'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as OurWorkersRouteImport } from './routes/our-workers'
+import { Route as PayRouteImport } from './routes/pay'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as PropertyManagersRouteImport } from './routes/property-managers'
 import { Route as ReviewsRouteImport } from './routes/reviews'
@@ -60,6 +61,11 @@ const FaqRoute = FaqRouteImport.update({
 const OurWorkersRoute = OurWorkersRouteImport.update({
   id: '/our-workers',
   path: '/our-workers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayRoute = PayRouteImport.update({
+  id: '/pay',
+  path: '/pay',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/our-workers': typeof OurWorkersRoute
+  '/pay': typeof PayRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/property-managers': typeof PropertyManagersRoute
   '/reviews': typeof ReviewsRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/our-workers': typeof OurWorkersRoute
+  '/pay': typeof PayRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/property-managers': typeof PropertyManagersRoute
   '/reviews': typeof ReviewsRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/our-workers': typeof OurWorkersRoute
+  '/pay': typeof PayRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/property-managers': typeof PropertyManagersRoute
   '/reviews': typeof ReviewsRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/our-workers'
+    | '/pay'
     | '/privacy-policy'
     | '/property-managers'
     | '/reviews'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/our-workers'
+    | '/pay'
     | '/privacy-policy'
     | '/property-managers'
     | '/reviews'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/our-workers'
+    | '/pay'
     | '/privacy-policy'
     | '/property-managers'
     | '/reviews'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   OurWorkersRoute: typeof OurWorkersRoute
+  PayRoute: typeof PayRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   PropertyManagersRoute: typeof PropertyManagersRoute
   ReviewsRoute: typeof ReviewsRoute
@@ -300,6 +313,13 @@ declare module '@tanstack/react-router' {
       path: '/our-workers'
       fullPath: '/our-workers'
       preLoaderRoute: typeof OurWorkersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay': {
+      id: '/pay'
+      path: '/pay'
+      fullPath: '/pay'
+      preLoaderRoute: typeof PayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy-policy': {
@@ -383,6 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   OurWorkersRoute: OurWorkersRoute,
+  PayRoute: PayRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   PropertyManagersRoute: PropertyManagersRoute,
   ReviewsRoute: ReviewsRoute,

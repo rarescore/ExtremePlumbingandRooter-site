@@ -398,6 +398,8 @@ export function getService(slug: string) {
 }
 
 export function canonical(path = "/") {
-  const clean = path === "/" ? "" : path.replace(/\/$/, "");
+  // Served URLs have no trailing slash (Netlify redirects /x/ -> /x), except the
+  // homepage, which is served as "/". Canonicals must match that form exactly.
+  const clean = path === "/" ? "/" : path.replace(/\/+$/, "");
   return `${SITE_URL}${clean}`;
 }

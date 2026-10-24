@@ -55,6 +55,30 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://www.rooter-plumber.com/pay</loc>
+    <lastmod>2026-10-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.rooter-plumber.com/book</loc>
+    <lastmod>2026-10-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.rooter-plumber.com/reviews</loc>
+    <lastmod>2026-10-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.rooter-plumber.com/property-managers</loc>
+    <lastmod>2026-10-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://www.rooter-plumber.com/privacy-policy</loc>
     <lastmod>2026-09-15</lastmod>
     <changefreq>yearly</changefreq>

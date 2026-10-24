@@ -159,6 +159,24 @@ function Home() {
         </section>
 
         <section className="pb-16 md:pb-20">
+          <div className="shell grid items-center gap-8 border border-line bg-cream px-6 py-8 md:grid-cols-[1.3fr_auto] md:px-10">
+            <div>
+              <p className="text-sm font-semibold tracking-[0.14em] text-brand uppercase">Online Billing</p>
+              <h2 className="mt-2 font-sans text-3xl font-semibold tracking-normal text-navy normal-case">
+                Pay your plumbing invoice online.
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
+                Have a completed work order? Enter your invoice number and amount to pay securely with Apple Pay, Google
+                Pay, or any major credit or debit card.
+              </p>
+            </div>
+            <Link to="/pay" className="text-link">
+              Pay an invoice
+            </Link>
+          </div>
+        </section>
+
+        <section className="pb-16 md:pb-20">
           <div className="shell grid items-center gap-8 border border-line bg-navy px-6 py-8 text-cream md:grid-cols-[1.3fr_auto] md:px-10">
             <div>
               <p className="text-sm font-semibold tracking-[0.14em] text-brand uppercase">Employment</p>
