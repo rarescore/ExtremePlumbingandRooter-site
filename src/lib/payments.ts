@@ -1,21 +1,34 @@
 import { createServerFn } from "@tanstack/react-start";
-import { COMPANY, SITE_URL } from "@/lib/site";
 
-export type PaymentIntentInput = {
+export const EXTREME_PLUMBING_STRIPE_ACCOUNT_ID = "acct_1P3oY0L3QsTTzrJj";
+export const EXTREME_PLUMBING_STRIPE_ACCOUNT_NAME = "Extreme Plumbing & Rooter Inc";
+
+export type CreateInvoicePaymentInput = {
   invoiceNumber: string;
-  amount: number | string;
+  amount: string | number;
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;
+  paymentMethodChoice?: "card" | "apple_pay" | "google_pay";
 };
 
-export type PaymentIntentResult =
+export type StripePaymentConfigResult = {
+  ok: true;
+  configured: boolean;
+  publishableKey: string | null;
+  accountId: string;
+  accountName: string;
+  keyMode: "live" | "test" | "preview";
+};
+
+export type CreatePaymentIntentResult =
   | {
       ok: true;
       mode: "stripe";
       clientSecret: string;
       paymentIntentId: string;
-      publishableKey: string;
+      publishableKey: string | null;
+      accountId: string;
       amountCents: number;
       invoiceNumber: string;
       description: string;
@@ -23,116 +36,136 @@ export type PaymentIntentResult =
   | {
       ok: true;
       mode: "preview";
-      publishableKey: null;
+      publishableKey: string | null;
+      accountId: string;
       amountCents: number;
       invoiceNumber: string;
       description: string;
       message: string;
     };
 
-export type CheckoutSessionResult =
+export type CreateCheckoutSessionResult =
   | {
       ok: true;
       mode: "stripe";
       url: string;
       sessionId: string;
+      accountId: string;
       amountCents: number;
       invoiceNumber: string;
     }
   | {
       ok: true;
       mode: "preview";
-      url: null;
+      accountId: string;
       amountCents: number;
       invoiceNumber: string;
       message: string;
     };
 
 function clean(value: unknown, max = 160): string {
-  return String(value ?? "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, max);
+  if (typeof value !== "string") return "";
+  return value.trim().slice(0, max);
 }
 
 export function normalizeInvoiceNumber(raw: unknown): string {
-  const trimmed = clean(raw, 64).replace(/^#+\s*/, "");
-  if (!trimmed || trimmed.length < 2) {
-    throw new Error("Please enter a valid invoice number (for example, #INV-1042).");
-  }
-  return trimmed;
+  const str = clean(raw, 64).replace(/^#+\s*/, "");
+  return str;
 }
 
-export function parseAmountCents(raw: unknown): number {
-  const cleaned = String(raw ?? "")
-    .replace(/[$,\s]/g, "")
-    .trim();
-  const parsed = Number.parseFloat(cleaned);
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    throw new Error("Please enter a valid payment amount of at least $1.00.");
+export function parseDollarAmountToCents(raw: unknown): number {
+  const str =
+    typeof raw === "number"
+      ? String(raw)
+      : clean(raw, 32).replace(/[$,\s]/g, "");
+  if (!str || !/^\d+(\.\d{1,2})?$/.test(str)) {
+    throw new Error("Please enter a valid dollar amount (for example, 185.00).");
   }
-  if (parsed > 100000) {
-    throw new Error("For invoice payments over $100,000.00, please call the office at 818-631-7296.");
+  const amountFloat = Number(str);
+  if (!Number.isFinite(amountFloat)) {
+    throw new Error("Please enter a valid dollar amount.");
   }
-  return Math.round(parsed * 100);
+  const cents = Math.round(amountFloat * 100);
+  if (cents < 100) {
+    throw new Error("Minimum online invoice payment is $1.00.");
+  }
+  if (cents > 5000000) {
+    throw new Error("For invoices above $50,000.00, please call our office at 818-631-7296.");
+  }
+  return cents;
 }
 
 export function resolveStripeKeys(): {
   secretKey: string | null;
   publishableKey: string | null;
-  configured: boolean;
+  accountId: string;
+  webhookSecret: string | null;
+  keyMode: "live" | "test" | "preview";
 } {
   const secretKey =
-    process.env.STRIPE_SECRET_KEY?.trim() ||
-    process.env.STRIPE_API_KEY?.trim() ||
+    clean(process.env.STRIPE_SECRET_KEY, 256) ||
+    clean(process.env.STRIPE_API_KEY, 256) ||
     null;
   const publishableKey =
-    process.env.VITE_STRIPE_PUBLISHABLE_KEY?.trim() ||
-    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim() ||
-    process.env.STRIPE_PUBLISHABLE_KEY?.trim() ||
+    clean(process.env.VITE_STRIPE_PUBLISHABLE_KEY, 256) ||
+    clean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, 256) ||
+    clean(process.env.STRIPE_PUBLISHABLE_KEY, 256) ||
     null;
-  return {
-    secretKey,
-    publishableKey,
-    configured: Boolean(secretKey && publishableKey),
-  };
+  const accountId =
+    clean(process.env.STRIPE_ACCOUNT_ID, 128) ||
+    EXTREME_PLUMBING_STRIPE_ACCOUNT_ID;
+  const webhookSecret = clean(process.env.STRIPE_WEBHOOK_SECRET, 256) || null;
+  const keyMode: "live" | "test" | "preview" = !secretKey
+    ? "preview"
+    : secretKey.startsWith("sk_live_")
+      ? "live"
+      : "test";
+  return { secretKey, publishableKey, accountId, webhookSecret, keyMode };
 }
 
-export async function createStripePaymentIntentServer(input: PaymentIntentInput): Promise<PaymentIntentResult> {
-  const invoiceNumber = normalizeInvoiceNumber(input.invoiceNumber);
-  const amountCents = parseAmountCents(input.amount);
-  const customerName = clean(input.customerName, 120);
-  const customerEmail = clean(input.customerEmail, 160);
-  const customerPhone = clean(input.customerPhone, 40);
-  const description = `${COMPANY} - Invoice #${invoiceNumber}`;
+export async function createStripePaymentIntentServer(
+  raw: CreateInvoicePaymentInput,
+): Promise<CreatePaymentIntentResult> {
+  const invoiceNumber = normalizeInvoiceNumber(raw?.invoiceNumber);
+  if (!invoiceNumber) {
+    throw new Error("Please enter your Invoice Number (for example, #INV-1042).");
+  }
 
-  const { secretKey, publishableKey, configured } = resolveStripeKeys();
-  if (!configured || !secretKey || !publishableKey) {
+  const amountCents = parseDollarAmountToCents(raw?.amount);
+  const customerName = clean(raw?.customerName, 120);
+  const customerEmail = clean(raw?.customerEmail, 160);
+  const customerPhone = clean(raw?.customerPhone, 40);
+  const description = `Extreme Plumbing & Rooter - Invoice #${invoiceNumber}`;
+
+  const { secretKey, publishableKey, accountId } = resolveStripeKeys();
+
+  if (!secretKey) {
     return {
       ok: true,
       mode: "preview",
-      publishableKey: null,
+      publishableKey,
+      accountId,
       amountCents,
       invoiceNumber,
       description,
       message:
-        "Preview mode active. Live Apple Pay, Google Pay, and Card charges activate automatically once STRIPE_SECRET_KEY and VITE_STRIPE_PUBLISHABLE_KEY (or NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) are set.",
+        "Preview mode active (Stripe account Extreme Plumbing & Rooter Inc · acct_1P3oY0L3QsTTzrJj). Live Apple Pay, Google Pay, and Card charges activate automatically once STRIPE_SECRET_KEY and VITE_STRIPE_PUBLISHABLE_KEY (or NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) are set.",
     };
   }
 
   const params = new URLSearchParams();
   params.set("amount", String(amountCents));
   params.set("currency", "usd");
-  params.set("automatic_payment_methods[enabled]", "true");
   params.set("description", description);
+  params.set("automatic_payment_methods[enabled]", "true");
   params.set("metadata[invoice_number]", invoiceNumber);
-  params.set("metadata[source]", "rooter-plumber.com");
+  params.set("metadata[stripe_account]", accountId);
+  params.set("metadata[business_name]", EXTREME_PLUMBING_STRIPE_ACCOUNT_NAME);
+  params.set("metadata[source]", "rooter-plumber.com/pay");
   if (customerName) params.set("metadata[customer_name]", customerName);
   if (customerEmail) {
     params.set("metadata[customer_email]", customerEmail);
-    if (/^\S+@\S+\.\S+$/.test(customerEmail)) {
-      params.set("receipt_email", customerEmail);
-    }
+    params.set("receipt_email", customerEmail);
   }
   if (customerPhone) params.set("metadata[customer_phone]", customerPhone);
 
@@ -145,22 +178,26 @@ export async function createStripePaymentIntentServer(input: PaymentIntentInput)
     body: params.toString(),
   });
 
-  const payload = (await response.json()) as {
+  const data = (await response.json()) as {
     id?: string;
     client_secret?: string;
     error?: { message?: string };
   };
 
-  if (!response.ok || !payload.client_secret || !payload.id) {
-    throw new Error(payload.error?.message || "Unable to initialize Stripe payment right now.");
+  if (!response.ok || !data.client_secret || !data.id) {
+    throw new Error(
+      data?.error?.message ||
+        "Unable to initialize Stripe payment right now. Please try again or call 818-631-7296.",
+    );
   }
 
   return {
     ok: true,
     mode: "stripe",
-    clientSecret: payload.client_secret,
-    paymentIntentId: payload.id,
+    clientSecret: data.client_secret,
+    paymentIntentId: data.id,
     publishableKey,
+    accountId,
     amountCents,
     invoiceNumber,
     description,
@@ -168,52 +205,66 @@ export async function createStripePaymentIntentServer(input: PaymentIntentInput)
 }
 
 export async function createStripeCheckoutSessionServer(
-  input: PaymentIntentInput & { origin?: string },
-): Promise<CheckoutSessionResult> {
-  const invoiceNumber = normalizeInvoiceNumber(input.invoiceNumber);
-  const amountCents = parseAmountCents(input.amount);
-  const customerName = clean(input.customerName, 120);
-  const customerEmail = clean(input.customerEmail, 160);
-  const description = `${COMPANY} - Invoice #${invoiceNumber}`;
+  raw: CreateInvoicePaymentInput & { origin?: string },
+): Promise<CreateCheckoutSessionResult> {
+  const invoiceNumber = normalizeInvoiceNumber(raw?.invoiceNumber);
+  if (!invoiceNumber) {
+    throw new Error("Please enter your Invoice Number (for example, #INV-1042).");
+  }
 
-  const { secretKey } = resolveStripeKeys();
+  const amountCents = parseDollarAmountToCents(raw?.amount);
+  const customerName = clean(raw?.customerName, 120);
+  const customerEmail = clean(raw?.customerEmail, 160);
+  const description = `Extreme Plumbing & Rooter - Invoice #${invoiceNumber}`;
+  const origin =
+    clean(raw?.origin, 200) ||
+    clean(process.env.SITE_URL, 200) ||
+    "https://www.rooter-plumber.com";
+
+  const { secretKey, accountId } = resolveStripeKeys();
   if (!secretKey) {
     return {
       ok: true,
       mode: "preview",
-      url: null,
+      accountId,
       amountCents,
       invoiceNumber,
       message:
-        "Preview mode active. Add STRIPE_SECRET_KEY to enable live Stripe Checkout redirects.",
+        "Preview mode active (Stripe account Extreme Plumbing & Rooter Inc · acct_1P3oY0L3QsTTzrJj). Live Stripe Checkout activates once STRIPE_SECRET_KEY is configured.",
     };
   }
 
-  const baseOrigin = clean(input.origin, 200) || SITE_URL;
-  const amountFormatted = (amountCents / 100).toFixed(2);
-  const successUrl = `${baseOrigin}/pay?payment=success&invoice=${encodeURIComponent(invoiceNumber)}&amount=${encodeURIComponent(amountFormatted)}`;
-  const cancelUrl = `${baseOrigin}/pay?payment=cancelled&invoice=${encodeURIComponent(invoiceNumber)}&amount=${encodeURIComponent(amountFormatted)}`;
-
   const params = new URLSearchParams();
   params.set("mode", "payment");
-  params.set("success_url", successUrl);
-  params.set("cancel_url", cancelUrl);
-  params.set("line_items[0][quantity]", "1");
+  params.set(
+    "success_url",
+    `${origin}/pay?status=success&invoice=${encodeURIComponent(invoiceNumber)}`,
+  );
+  params.set(
+    "cancel_url",
+    `${origin}/pay?status=cancelled&invoice=${encodeURIComponent(invoiceNumber)}`,
+  );
   params.set("line_items[0][price_data][currency]", "usd");
   params.set("line_items[0][price_data][unit_amount]", String(amountCents));
-  params.set("line_items[0][price_data][product_data][name]", description);
+  params.set(
+    "line_items[0][price_data][product_data][name]",
+    `Invoice #${invoiceNumber}`,
+  );
   params.set(
     "line_items[0][price_data][product_data][description]",
-    `Online invoice payment for Invoice #${invoiceNumber}`,
+    description,
   );
+  params.set("line_items[0][quantity]", "1");
+  params.set("metadata[invoice_number]", invoiceNumber);
+  params.set("metadata[stripe_account]", accountId);
   params.set("payment_intent_data[description]", description);
   params.set("payment_intent_data[metadata][invoice_number]", invoiceNumber);
-  params.set("metadata[invoice_number]", invoiceNumber);
+  params.set("payment_intent_data[metadata][stripe_account]", accountId);
   if (customerName) {
-    params.set("payment_intent_data[metadata][customer_name]", customerName);
     params.set("metadata[customer_name]", customerName);
+    params.set("payment_intent_data[metadata][customer_name]", customerName);
   }
-  if (customerEmail && /^\S+@\S+\.\S+$/.test(customerEmail)) {
+  if (customerEmail) {
     params.set("customer_email", customerEmail);
     params.set("payment_intent_data[receipt_email]", customerEmail);
   }
@@ -227,61 +278,52 @@ export async function createStripeCheckoutSessionServer(
     body: params.toString(),
   });
 
-  const payload = (await response.json()) as {
+  const data = (await response.json()) as {
     id?: string;
     url?: string;
     error?: { message?: string };
   };
 
-  if (!response.ok || !payload.url || !payload.id) {
-    throw new Error(payload.error?.message || "Unable to create Stripe Checkout session.");
+  if (!response.ok || !data.url || !data.id) {
+    throw new Error(
+      data?.error?.message ||
+        "Unable to start Stripe Checkout right now. Please call 818-631-7296.",
+    );
   }
 
   return {
     ok: true,
     mode: "stripe",
-    url: payload.url,
-    sessionId: payload.id,
+    url: data.url,
+    sessionId: data.id,
+    accountId,
     amountCents,
     invoiceNumber,
   };
 }
 
-export const getStripePaymentConfig = createServerFn({ method: "GET" }).handler(async () => {
-  const { publishableKey, configured } = resolveStripeKeys();
-  return {
-    configured,
-    publishableKey,
-  };
-});
+export const getStripePaymentConfig = createServerFn({ method: "GET" }).handler(
+  async (): Promise<StripePaymentConfigResult> => {
+    const { secretKey, publishableKey, accountId, keyMode } = resolveStripeKeys();
+    return {
+      ok: true,
+      configured: Boolean(secretKey && publishableKey),
+      publishableKey,
+      accountId,
+      accountName: EXTREME_PLUMBING_STRIPE_ACCOUNT_NAME,
+      keyMode,
+    };
+  },
+);
 
 export const createInvoicePaymentIntent = createServerFn({ method: "POST" })
-  .validator((input: unknown): PaymentIntentInput => {
-    const data = (input ?? {}) as Partial<PaymentIntentInput>;
-    return {
-      invoiceNumber: clean(data.invoiceNumber, 64),
-      amount: data.amount ?? "",
-      customerName: clean(data.customerName, 120),
-      customerEmail: clean(data.customerEmail, 160),
-      customerPhone: clean(data.customerPhone, 40),
-    };
-  })
-  .handler(async ({ data }) => {
+  .inputValidator((raw: CreateInvoicePaymentInput) => raw)
+  .handler(async ({ data }): Promise<CreatePaymentIntentResult> => {
     return createStripePaymentIntentServer(data);
   });
 
 export const createInvoiceCheckoutSession = createServerFn({ method: "POST" })
-  .validator((input: unknown): PaymentIntentInput & { origin?: string } => {
-    const data = (input ?? {}) as Partial<PaymentIntentInput & { origin?: string }>;
-    return {
-      invoiceNumber: clean(data.invoiceNumber, 64),
-      amount: data.amount ?? "",
-      customerName: clean(data.customerName, 120),
-      customerEmail: clean(data.customerEmail, 160),
-      customerPhone: clean(data.customerPhone, 40),
-      origin: clean(data.origin, 200),
-    };
-  })
-  .handler(async ({ data }) => {
+  .inputValidator((raw: CreateInvoicePaymentInput & { origin?: string }) => raw)
+  .handler(async ({ data }): Promise<CreateCheckoutSessionResult> => {
     return createStripeCheckoutSessionServer(data);
   });
