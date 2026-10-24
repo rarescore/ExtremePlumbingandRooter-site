@@ -60,12 +60,18 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
       >
         Skip to content
       </a>
-      <div className="shell flex h-[4.5rem] items-center gap-3 md:h-[5.25rem] lg:gap-4">
+      <div className="mx-auto flex h-[4.5rem] w-[min(100%-1.5rem,78rem)] items-center justify-between gap-3 sm:w-[min(100%-2.5rem,78rem)] md:h-[5.25rem] xl:gap-4">
         <Logo
           variant={onVideo || !overlay ? "onDark" : "onLight"}
-          className={onVideo ? "drop-shadow-[0_2px_10px_rgba(0,0,0,0.72)]" : undefined}
+          className={cn(
+            "shrink-0 [&_img]:lg:h-[2.45rem] [&_img]:xl:h-[3.1rem]",
+            onVideo && "drop-shadow-[0_2px_10px_rgba(0,0,0,0.72)]",
+          )}
         />
-        <nav className="ml-auto hidden min-w-0 items-center gap-3.5 lg:flex xl:gap-4" aria-label="Primary">
+        <nav
+          className="hidden shrink-0 items-center gap-2.5 lg:flex xl:gap-3.5 2xl:gap-4"
+          aria-label="Primary"
+        >
           {navLinks.map((item) => {
             const active = pathname === item.href;
             return (
@@ -73,7 +79,7 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
                 key={item.href}
                 to={item.href}
                 className={cn(
-                  "nav-item relative whitespace-nowrap text-[0.66rem] font-semibold tracking-[0.11em] uppercase transition-colors duration-150",
+                  "nav-item relative shrink-0 whitespace-nowrap text-[0.6rem] font-semibold tracking-[0.07em] uppercase transition-colors duration-150 xl:text-[0.66rem] xl:tracking-[0.11em]",
                   onVideo && "text-cream [text-shadow:0_1px_2px_rgba(0,0,0,0.9)] hover:text-white",
                   onVideo && active && "text-white",
                   overlay && solid && "text-navy/75 hover:text-navy",
@@ -87,34 +93,40 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
             );
           })}
         </nav>
-        <div className="hidden shrink-0 items-center gap-2 lg:flex">
+        <div className="hidden shrink-0 items-center gap-1.5 lg:flex xl:gap-2">
           <a
             href={PHONE_HREF}
             className={cn(
-              "inline-flex min-h-11 items-center gap-1.5 rounded-md px-3 text-xs font-bold tracking-wide whitespace-nowrap transition-transform duration-150 active:translate-y-px",
+              "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-[0.68rem] font-bold tracking-wide whitespace-nowrap transition-transform duration-150 active:translate-y-px xl:min-h-10 xl:px-3 xl:text-xs",
               onVideo || !overlay ? "bg-cream text-navy" : "bg-navy text-cream",
             )}
           >
-            <Phone className="size-3.5 text-brand" aria-hidden="true" />
+            <Phone className="size-3.5 shrink-0 text-brand" aria-hidden="true" />
             {PHONE_DISPLAY}
           </a>
           <Link
             to="/pay"
             className={cn(
               buttonVariants({ variant: onVideo || !overlay ? "ghost" : "outline" }),
-              "px-3.5 whitespace-nowrap",
+              "min-h-9 shrink-0 px-2.5 text-[0.62rem] tracking-[0.09em] whitespace-nowrap xl:min-h-10 xl:px-3.5 xl:text-[0.68rem] xl:tracking-[0.12em]",
             )}
           >
             Pay Invoice
           </Link>
-          <Link to="/contact" className={cn(buttonVariants({ variant: "primary" }), "px-4")}>
+          <Link
+            to="/contact"
+            className={cn(
+              buttonVariants({ variant: "primary" }),
+              "min-h-9 shrink-0 px-3 text-[0.62rem] tracking-[0.09em] whitespace-nowrap xl:min-h-10 xl:px-4 xl:text-[0.68rem] xl:tracking-[0.12em]",
+            )}
+          >
             Contact
           </Link>
         </div>
         <button
           type="button"
           className={cn(
-            "ml-auto grid size-11 place-items-center lg:hidden",
+            "ml-auto grid size-11 shrink-0 place-items-center lg:hidden",
             onVideo || !overlay ? "text-cream drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]" : "text-navy",
           )}
           aria-label={open ? "Close menu" : "Open menu"}

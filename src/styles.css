@@ -407,6 +407,8 @@ footer a:hover {
 [aria-hidden="false"] .menu-item:nth-child(7) { transition-delay: 220ms; }
 [aria-hidden="false"] .menu-item:nth-child(8) { transition-delay: 250ms; }
 [aria-hidden="false"] .menu-item:nth-child(9) { transition-delay: 280ms; }
+[aria-hidden="false"] .menu-item:nth-child(10) { transition-delay: 310ms; }
+[aria-hidden="false"] .menu-item:nth-child(11) { transition-delay: 340ms; }
 
 @supports (animation-timeline: view()) {
   main > section:nth-child(n + 2) {
