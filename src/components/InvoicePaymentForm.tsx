@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   createInvoiceCheckoutSession,
   createInvoicePaymentIntent,
+  EXTREME_PLUMBING_STRIPE_PUBLISHABLE_KEY,
   getStripePaymentConfig,
 } from "@/lib/payments";
 import { COMPANY, LICENSE_NUMBER, PHONE_DISPLAY, PHONE_HREF } from "@/lib/site";
@@ -26,7 +27,7 @@ type StripeElementsInstance = {
   ) => {
     mount: (selectorOrEl: string | HTMLElement) => void;
     unmount: () => void;
-    on?: (event: string, handler: (ev: unknown) => void) => void;
+    on?: (event: string, handler: (ev: any) => void) => void;
   };
 };
 
@@ -44,8 +45,14 @@ function loadStripeJs(): Promise<void> {
   if (stripeScriptPromise) return stripeScriptPromise;
 
   stripeScriptPromise = new Promise((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>('script[src="https://js.stripe.com/v3/"]');
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[src="https://js.stripe.com/v3/"]',
+    );
     if (existing) {
+      if (window.Stripe) {
+        resolve();
+        return;
+      }
       existing.addEventListener("load", () => resolve());
       existing.addEventListener("error", () => reject(new Error("Failed to load Stripe.js")));
       return;
@@ -123,7 +130,7 @@ export function InvoicePaymentForm({
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
 
-  // Card inputs for preview / instant card UI
+  // Card inputs for preview / instant card UI before live intent initializes
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvc, setCardCvc] = useState("");
@@ -133,12 +140,14 @@ export function InvoicePaymentForm({
   const clientEnvKey =
     (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined)?.trim() ||
     (import.meta.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string | undefined)?.trim() ||
-    null;
+    EXTREME_PLUMBING_STRIPE_PUBLISHABLE_KEY;
 
-  const [stripeConfigured, setStripeConfigured] = useState<boolean>(Boolean(clientEnvKey));
+  const [stripeConfigured, setStripeConfigured] = useState<boolean>(false);
   const [publishableKey, setPublishableKey] = useState<string | null>(clientEnvKey);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [stripeElementsReady, setStripeElementsReady] = useState(false);
+  const [expressWalletAvailable, setExpressWalletAvailable] = useState(false);
 
   const [status, setStatus] = useState<"idle" | "processing" | "success" | "error">(
     initialStatus === "success" ? "success" : "idle",
@@ -172,15 +181,19 @@ export function InvoicePaymentForm({
   const elementsRef = useRef<StripeElementsInstance | null>(null);
   const paymentMountRef = useRef<HTMLDivElement | null>(null);
   const expressMountRef = useRef<HTMLDivElement | null>(null);
+  const lastIntentKeyRef = useRef<string>("");
 
   useEffect(() => {
     let active = true;
-    getStripePaymentConfig()
+    fetch("/api/stripe/config")
+      .then((res) => (res.ok ? res.json() : getStripePaymentConfig()))
+      .catch(() => getStripePaymentConfig())
       .then((cfg) => {
-        if (!active) return;
+        if (!active || !cfg) return;
         if (cfg.configured && cfg.publishableKey) {
           setStripeConfigured(true);
           setPublishableKey(cfg.publishableKey);
+          loadStripeJs().catch(() => null);
         }
       })
       .catch(() => {
@@ -190,6 +203,47 @@ export function InvoicePaymentForm({
       active = false;
     };
   }, []);
+
+  const parsedAmount = parseUsdAmount(amountInput);
+  const cleanInvoiceValue = invoiceNumber.replace(/^#+\s*/, "").trim();
+
+  // Automatically create a live Stripe PaymentIntent when invoiceNumber & amount are valid
+  useEffect(() => {
+    if (!stripeConfigured || !publishableKey) return;
+    if (cleanInvoiceValue.length < 2 || !parsedAmount || parsedAmount < 1) return;
+
+    const intentKey = `${cleanInvoiceValue}::${Math.round(parsedAmount * 100)}`;
+    if (lastIntentKeyRef.current === intentKey && clientSecret) return;
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch("/api/stripe/create-payment-intent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            invoiceNumber: cleanInvoiceValue,
+            amount: parsedAmount,
+            customerName,
+            customerEmail,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data?.mode === "stripe" && data.clientSecret) {
+          lastIntentKeyRef.current = intentKey;
+          setStripeElementsReady(false);
+          setClientSecret(data.clientSecret);
+          setPaymentIntentId(data.paymentIntentId || null);
+          if (data.publishableKey) setPublishableKey(data.publishableKey);
+        }
+      } catch {
+        // Fall back to on-demand creation on submit/button click
+      }
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [stripeConfigured, publishableKey, cleanInvoiceValue, parsedAmount, customerName, customerEmail, clientSecret]);
 
   // Mount Stripe PaymentElement + ExpressCheckoutElement when a live clientSecret is created
   useEffect(() => {
@@ -221,9 +275,17 @@ export function InvoicePaymentForm({
         if (expressMountRef.current) {
           expressMountRef.current.innerHTML = "";
           const expressEl = elements.create("expressCheckout", {
-            buttonType: { applePay: "pay", googlePay: "pay" },
+            buttonType: { applePay: "check-out", googlePay: "pay" },
           });
           expressEl.mount(expressMountRef.current);
+          expressEl.on?.("ready", (ev: { availablePaymentMethods?: Record<string, boolean> }) => {
+            if (cancelled) return;
+            const available = Boolean(
+              ev?.availablePaymentMethods &&
+                Object.values(ev.availablePaymentMethods).some(Boolean),
+            );
+            setExpressWalletAvailable(available);
+          });
           expressEl.on?.("confirm", async () => {
             const returnUrl = `${window.location.origin}/pay?payment=success&invoice=${encodeURIComponent(
               invoiceNumber.replace(/^#+\s*/, "").trim(),
@@ -246,6 +308,9 @@ export function InvoicePaymentForm({
           paymentMountRef.current.innerHTML = "";
           const paymentEl = elements.create("payment", { layout: "tabs" });
           paymentEl.mount(paymentMountRef.current);
+          paymentEl.on?.("ready", () => {
+            if (!cancelled) setStripeElementsReady(true);
+          });
         }
 
         setStripeElementsReady(true);
@@ -262,7 +327,6 @@ export function InvoicePaymentForm({
     };
   }, [stripeConfigured, publishableKey, clientSecret]);
 
-  const parsedAmount = parseUsdAmount(amountInput);
   const formattedButtonAmount = parsedAmount ? ` ${formatCurrency(parsedAmount)}` : "";
 
   function validateBaseFields(): { cleanInvoice: string; validAmount: number } | null {
@@ -323,19 +387,26 @@ export function InvoicePaymentForm({
     setStatus("processing");
     try {
       if (stripeConfigured) {
-        // Create Stripe PaymentIntent (or Checkout Session fallback) when live keys are present
-        const intent = await createInvoicePaymentIntent({
-          data: {
-            invoiceNumber: base.cleanInvoice,
-            amount: base.validAmount,
-            customerName,
-            customerEmail,
-          },
-        });
-        if (intent.mode === "stripe") {
-          setClientSecret(intent.clientSecret);
-          setPublishableKey(intent.publishableKey);
-          setStatus("idle");
+        if (!clientSecret) {
+          const intent = await createInvoicePaymentIntent({
+            data: {
+              invoiceNumber: base.cleanInvoice,
+              amount: base.validAmount,
+              customerName,
+              customerEmail,
+            },
+          });
+          if (intent.mode === "stripe") {
+            lastIntentKeyRef.current = `${base.cleanInvoice}::${Math.round(base.validAmount * 100)}`;
+            setClientSecret(intent.clientSecret);
+            setPaymentIntentId(intent.paymentIntentId);
+            setPublishableKey(intent.publishableKey);
+            setStatus("idle");
+            return;
+          }
+        } else {
+          // If ExpressCheckoutElement is mounted but browser wallet wasn't triggered directly, open Hosted Checkout with Apple Pay / Google Pay enabled
+          await handleHostedCheckout();
           return;
         }
       }
@@ -427,7 +498,9 @@ export function InvoicePaymentForm({
           },
         });
         if (result.mode === "stripe") {
+          lastIntentKeyRef.current = `${base.cleanInvoice}::${Math.round(base.validAmount * 100)}`;
           setClientSecret(result.clientSecret);
+          setPaymentIntentId(result.paymentIntentId);
           setPublishableKey(result.publishableKey);
           setStatus("idle");
           return;
@@ -557,6 +630,8 @@ export function InvoicePaymentForm({
       )}
       onSubmit={handleSubmit}
       noValidate
+      data-stripe-configured={stripeConfigured ? "true" : "false"}
+      data-payment-intent-id={paymentIntentId ?? undefined}
     >
       <div className={compact ? "mb-5" : "mb-6"}>
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -673,11 +748,15 @@ export function InvoicePaymentForm({
           <span className="text-xs text-muted">Instant wallet payment</span>
         </div>
 
-        {stripeConfigured && clientSecret ? (
-          <div className="mt-3">
-            <div ref={expressMountRef} className="min-h-11" />
-          </div>
-        ) : (
+        {stripeConfigured && clientSecret && (
+          <div
+            ref={expressMountRef}
+            data-testid="stripe-express-checkout-element"
+            className={cn(expressWalletAvailable ? "mt-3 min-h-11" : "mt-2")}
+          />
+        )}
+
+        {(!stripeConfigured || !clientSecret || !expressWalletAvailable) && (
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
               type="button"
@@ -738,7 +817,10 @@ export function InvoicePaymentForm({
 
       {/* Step 3: Card Details / Live Stripe Payment Element */}
       {stripeConfigured && clientSecret ? (
-        <div className="rounded-lg border border-navy/15 bg-paper p-4">
+        <div
+          className="rounded-lg border border-navy/15 bg-paper p-4"
+          data-testid="stripe-payment-element"
+        >
           <div ref={paymentMountRef} className="min-h-36" />
           {!stripeElementsReady && (
             <p className="text-xs text-muted">Loading secure Stripe payment fields…</p>
@@ -822,7 +904,10 @@ export function InvoicePaymentForm({
       )}
 
       {errorMessage && (
-        <p className="mt-4 rounded-md border border-brand/30 bg-brand/8 px-3.5 py-2.5 text-sm font-medium text-brand" role="alert">
+        <p
+          className="mt-4 rounded-md border border-brand/30 bg-brand/8 px-3.5 py-2.5 text-sm font-medium text-brand"
+          role="alert"
+        >
           {errorMessage}
         </p>
       )}

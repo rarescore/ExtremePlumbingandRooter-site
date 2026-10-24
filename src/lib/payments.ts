@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 
 export const EXTREME_PLUMBING_STRIPE_ACCOUNT_ID = "acct_1P3oY0L3QsTTzrJj";
 export const EXTREME_PLUMBING_STRIPE_ACCOUNT_NAME = "Extreme Plumbing & Rooter Inc";
+export const EXTREME_PLUMBING_STRIPE_PUBLISHABLE_KEY =
+  "pk_live_51P3oY0L3QsTTzrJjGajpEwLIohimvRIw7XiyTNCRUre8hK7GXmCgqcG58TvUZL3bLEjPxWvZwpi2dkyalmohPNDr00c11RRMwg";
 
 export type CreateInvoicePaymentInput = {
   invoiceNumber: string;
@@ -29,6 +31,7 @@ export type CreatePaymentIntentResult =
       paymentIntentId: string;
       publishableKey: string | null;
       accountId: string;
+      livemode: boolean;
       amountCents: number;
       invoiceNumber: string;
       description: string;
@@ -97,7 +100,7 @@ export function parseDollarAmountToCents(raw: unknown): number {
 
 export function resolveStripeKeys(): {
   secretKey: string | null;
-  publishableKey: string | null;
+  publishableKey: string;
   accountId: string;
   webhookSecret: string | null;
   keyMode: "live" | "test" | "preview";
@@ -110,7 +113,7 @@ export function resolveStripeKeys(): {
     clean(process.env.VITE_STRIPE_PUBLISHABLE_KEY, 256) ||
     clean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, 256) ||
     clean(process.env.STRIPE_PUBLISHABLE_KEY, 256) ||
-    null;
+    EXTREME_PLUMBING_STRIPE_PUBLISHABLE_KEY;
   const accountId =
     clean(process.env.STRIPE_ACCOUNT_ID, 128) ||
     EXTREME_PLUMBING_STRIPE_ACCOUNT_ID;
@@ -149,7 +152,7 @@ export async function createStripePaymentIntentServer(
       invoiceNumber,
       description,
       message:
-        "Preview mode active (Stripe account Extreme Plumbing & Rooter Inc · acct_1P3oY0L3QsTTzrJj). Live Apple Pay, Google Pay, and Card charges activate automatically once STRIPE_SECRET_KEY and VITE_STRIPE_PUBLISHABLE_KEY (or NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) are set.",
+        "Preview mode active (Stripe account Extreme Plumbing & Rooter Inc · acct_1P3oY0L3QsTTzrJj). Live Apple Pay, Google Pay, and Card charges activate automatically once STRIPE_SECRET_KEY is set.",
     };
   }
 
@@ -181,6 +184,7 @@ export async function createStripePaymentIntentServer(
   const data = (await response.json()) as {
     id?: string;
     client_secret?: string;
+    livemode?: boolean;
     error?: { message?: string };
   };
 
@@ -198,6 +202,7 @@ export async function createStripePaymentIntentServer(
     paymentIntentId: data.id,
     publishableKey,
     accountId,
+    livemode: Boolean(data.livemode),
     amountCents,
     invoiceNumber,
     description,
