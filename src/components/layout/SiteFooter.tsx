@@ -43,6 +43,7 @@ export function SiteFooter() {
             <Link to="/property-managers">HOAs & managers</Link>
             <Link to="/faq">FAQ</Link>
             <Link to="/articles">Articles</Link>
+            <Link to="/pay">Pay invoice</Link>
             <Link to="/contact">Contact</Link>
           </div>
         </div>
@@ -61,6 +62,9 @@ export function SiteFooter() {
           <div className="grid gap-2 text-sm text-cream/80">
             <a href={PHONE_HREF}>Call {PHONE_DISPLAY}</a>
             <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
+            <Link to="/pay" className="font-semibold text-cream underline underline-offset-4">
+              Pay an invoice online →
+            </Link>
             <p>
               P.O. Box 14641
               <br />
@@ -76,6 +80,7 @@ export function SiteFooter() {
         <div className="shell flex flex-col gap-3 py-5 text-xs tracking-wide text-cream/50 md:flex-row md:items-center md:justify-between">
           <span>© {year} Extreme Plumbing & Rooter, Inc.</span>
           <div className="flex flex-wrap gap-x-5 gap-y-2">
+            <Link to="/pay">Pay invoice</Link>
             <Link to="/privacy-policy">Privacy policy</Link>
             <a href={`https://www.cslb.ca.gov/${LICENSE_NUMBER}`} target="_blank" rel="noreferrer">
               CA contractor license #{LICENSE_NUMBER}
