@@ -3,6 +3,7 @@ import { PageHero } from "@/components/layout/PageHero";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { buttonVariants } from "@/components/ui/button";
 import { formatArticleDate, getArticle, relatedArticles, sanitizeArticleHtml } from "@/lib/articles";
+import { serviceForArticle } from "@/lib/service-articles";
 import { COMPANY, PHONE_DISPLAY, PHONE_HREF, SITE_URL, canonical } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -11,7 +12,8 @@ export const Route = createFileRoute("/articles/$slug")({
     const article = getArticle(params.slug);
     if (!article) throw notFound();
     const related = relatedArticles(article.slug, 3);
-    return { article, related };
+    const service = serviceForArticle(article.slug);
+    return { article, related, service };
   },
   head: ({ loaderData }) => {
     const article = loaderData?.article;
@@ -29,7 +31,7 @@ export const Route = createFileRoute("/articles/$slug")({
 });
 
 function ArticlePage() {
-  const { article, related } = Route.useLoaderData();
+  const { article, related, service } = Route.useLoaderData();
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -96,6 +98,21 @@ function ArticlePage() {
                 <a href={PHONE_HREF} className="mt-3 block text-center text-sm font-semibold">
                   Call {PHONE_DISPLAY}
                 </a>
+              </div>
+              <div className="rounded-lg border border-line bg-paper p-6">
+                <h2 className="mb-3 font-sans text-sm font-semibold tracking-[0.14em] text-navy uppercase">
+                  Related service
+                </h2>
+                {service ? (
+                  <Link to="/services/$slug" params={{ slug: service.slug }} className="block">
+                    <span className="block text-base font-semibold text-navy">{service.title} in Los Angeles</span>
+                    <span className="mt-1 block text-sm text-muted">{service.short}</span>
+                  </Link>
+                ) : (
+                  <Link to="/services" className="block text-base font-semibold text-navy">
+                    Los Angeles plumbing services
+                  </Link>
+                )}
               </div>
               <div className="rounded-lg bg-cream p-6">
                 <h2 className="mb-4 font-sans text-sm font-semibold tracking-[0.14em] text-navy uppercase">
