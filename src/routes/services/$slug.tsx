@@ -19,7 +19,7 @@ export const Route = createFileRoute("/services/$slug")({
     return {
       meta: [
         { title: `${service?.title ?? "Service"} in Los Angeles | Extreme Plumbing` },
-        { name: "description", content: service?.description ?? "" },
+        { name: "description", content: service?.metaDescription ?? service?.description ?? "" },
       ],
       links: service ? [{ rel: "canonical", href: canonical(`/services/${service.slug}`) }] : [],
     };
@@ -35,7 +35,7 @@ function ServiceDetail() {
 
   const url = canonical(`/services/${service.slug}`);
   // Page-specific Service + BreadcrumbList schema. Values come only from this page's own
-  // H1 (service.title), meta description (service.description) and canonical URL.
+  // H1 (service.title), on-page description copy (service.description) and canonical URL.
   const serviceSchema = {
     "@context": "https://schema.org",
     "@graph": [
