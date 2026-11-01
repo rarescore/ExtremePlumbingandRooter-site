@@ -1,3 +1,4 @@
+import { ClarityTag } from "@/components/clarity";
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { Analytics } from "@/components/Analytics";
@@ -81,6 +82,7 @@ function RootDocument() {
           }}
         />
         <HeadContent />
+        <ClarityTag />
       </head>
       <body className="bg-paper text-ink">
         <PreviewHostBridge />
