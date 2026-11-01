@@ -51,6 +51,8 @@ export type Service = {
   title: string;
   short: string;
   description: string;
+  /** SERP meta description only (not rendered on the page). Falls back to description. */
+  metaDescription?: string;
   image: string;
   alt: string;
   highlights: string[];
@@ -65,6 +67,8 @@ export const services: Service[] = [
     short: "Clear stubborn clogs, backups, roots, and buildup.",
     description:
       "Don’t let a clogged drain slow the house down. We clear kitchen, bath, and main-line stoppages with professional rooter equipment, then explain why it happened so it is less likely to come back.",
+    metaDescription:
+      "Drain cleaning and rooter service in Los Angeles for kitchen, bath, and main-line clogs. 24/7 service and free estimates. Call 818-631-7296.",
     image: "/media/drain-cleaning.jpg",
     alt: "Professional drain cleaning machine at a residential cleanout",
     highlights: ["Kitchen and bathroom drains", "Main-line rooter service", "Recurring blockage diagnosis"],
@@ -78,6 +82,8 @@ export const services: Service[] = [
     short: "Repair sewer lines with less digging and disruption.",
     description:
       "A failing sewer line does not always mean tearing up the driveway. Trenchless replacement pulls a new pipe through the existing path, so landscaping, concrete, and daily life stay mostly intact.",
+    metaDescription:
+      "Trenchless sewer replacement in Los Angeles with minimal digging and camera-guided planning. 24/7 service, free estimates. Call 818-631-7296.",
     image: "/media/trenchless-sewer.jpg",
     alt: "Trenchless sewer replacement access pit in a Los Angeles driveway",
     highlights: ["Minimal excavation", "Durable modern materials", "Camera-guided planning"],
@@ -91,6 +97,8 @@ export const services: Service[] = [
     short: "Reliable hot water — repairs and replacements done right.",
     description:
       "No hot water, rusty water, or a tank that pops and hisses is not something to wait on. We service traditional tanks and tankless systems, size replacements for the house, and install them to code.",
+    metaDescription:
+      "Water heater repair and replacement in Los Angeles, tank and tankless, installed to code. 24/7 service, free estimates. Call 818-631-7296.",
     image: "/media/water-heaters.jpg",
     alt: "Newly installed residential tank water heater in a California garage",
     highlights: ["Tank and tankless systems", "Repair and replacement", "Efficiency guidance"],
@@ -104,6 +112,8 @@ export const services: Service[] = [
     short: "Upgrade aging or restricted water lines.",
     description:
       "Green copper, pinholes, and weak pressure are common in older Los Angeles homes. A copper repipe replaces failing supply lines with a durable, corrosion-resistant system sized for modern fixtures.",
+    metaDescription:
+      "Copper repipe in Los Angeles for green pipes, pinhole leaks, and low water pressure. Whole-home repiping, free estimates. Call 818-631-7296.",
     image: "/media/copper-repipe.jpg",
     alt: "New copper water pipes installed in an opened residential wall",
     highlights: ["Whole-home repiping", "Water-pressure improvement", "Residential and commercial"],
@@ -117,6 +127,8 @@ export const services: Service[] = [
     short: "High-pressure cleaning for grease, roots, and scale.",
     description:
       "Snaking punches a hole through a clog. Hydro-jetting scours the pipe wall with controlled high-pressure water, clearing grease, scale, and root hairs that a cable leaves behind.",
+    metaDescription:
+      "Hydro-jetting in Los Angeles clears grease, scale, and roots that snaking leaves behind. 24/7 service, free estimates. Call 818-631-7296.",
     image: "/media/hydro-jetting.jpg",
     alt: "Hydro-jetting hose working a sewer cleanout in a driveway",
     highlights: ["Deep pipe cleaning", "Grease and scale removal", "Preventive maintenance"],
@@ -130,6 +142,8 @@ export const services: Service[] = [
     short: "See the actual cause before choosing a repair.",
     description:
       "Guessing is expensive. A sewer camera is a lighted, waterproof video head on a push cable. We feed it through a cleanout and watch the inside of the line live — roots, cracks, offsets, grease, collapsed sections — then show you the recording and mark the location above ground.",
+    metaDescription:
+      "Sewer camera inspection in Los Angeles: live video of roots, cracks, and breaks, with the problem located. Free estimates. Call 818-631-7296.",
     image: "/media/camera-inspection.jpg",
     alt: "Sewer inspection camera reel and monitor showing the inside of a pipe",
     highlights: ["Live video of the pipe interior", "Problem-location mapping", "Repair verification"],
@@ -143,6 +157,8 @@ export const services: Service[] = [
     short: "Restore dependable heating and hot-water performance.",
     description:
       "Boilers are a different machine from a tank water heater. We diagnose pressure, ignition, circulation, and heat-exchanger problems, complete practical repairs, and plan a replacement when the unit is at the end of its life.",
+    metaDescription:
+      "Boiler repair and replacement in Los Angeles for pressure, ignition, and no-heat problems. 24/7 service, free estimates. Call 818-631-7296.",
     image: "/media/boilers.jpg",
     alt: "Residential hydronic boiler with gauges and heating pipes",
     highlights: ["Troubleshooting and repair", "Replacement planning", "System maintenance"],
@@ -156,6 +172,8 @@ export const services: Service[] = [
     short: "Find hidden leaks before the damage spreads.",
     description:
       "A hidden leak rarely announces itself with a puddle. We use acoustic listening, moisture readings, and line tracing to find supply and slab leaks without opening every wall.",
+    metaDescription:
+      "Leak detection in Los Angeles: we find hidden supply and slab leaks without opening every wall. 24/7 service, free estimates. Call 818-631-7296.",
     image: "/media/leak-detection.jpg",
     alt: "Technician using an electronic leak detector on an interior wall",
     highlights: ["Hidden water leaks", "Fixture and supply lines", "Targeted diagnosis"],
@@ -169,6 +187,8 @@ export const services: Service[] = [
     short: "Complex plumbing support for multi-story properties.",
     description:
       "High-rise systems need pressure regulation, vertical distribution, and drainage that a house does not. We work with property managers and building engineers on risers, booster pumps, stacks, and unit-level repairs.",
+    metaDescription:
+      "High-rise plumbing in Los Angeles for risers, booster pumps, stacks, and upper-floor pressure. Written estimates. Call 818-631-7296.",
     image: "/media/high-rise.jpg",
     alt: "Commercial high-rise mechanical room with vertical pipe risers",
     highlights: ["Pressure regulation", "Vertical distribution systems", "Commercial maintenance"],
