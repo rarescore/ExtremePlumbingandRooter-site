@@ -78,6 +78,20 @@ const MOVED: Record<string, string> = {
   "/book-an-appointment": "/book",
   "/service": "/services",
   "/articles/$slug": "/articles",
+  // GSC audit 2026-11-01: remaining legacy URLs that still 404
+  "/about-us": "/about",
+  "/company-history": "/about",
+  "/blog": "/articles",
+  "/faqs": "/faq",
+  "/invoice": "/pay",
+  // old WP form-confirmation page; /book is the live form it confirmed. /landing-page
+  // (old ad landing page, no live equivalent) is intentionally left as a 404.
+  "/thank-you": "/book",
+  "/valley-village": "/service-areas",
+  // stale WordPress sitemaps still registered in GSC -> current sitemap
+  "/sitemap_index.xml": "/sitemap.xml",
+  "/post-sitemap.xml": "/sitemap.xml",
+  "/page-sitemap.xml": "/sitemap.xml",
 };
 
 function resolve(path: string): string {
