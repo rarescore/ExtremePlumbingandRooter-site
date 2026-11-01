@@ -1,3 +1,4 @@
+import { SERVICE_SEO_TITLES } from "@/lib/seo-titles";
 import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { CtaBand } from "@/components/CtaBand";
@@ -18,7 +19,11 @@ export const Route = createFileRoute("/services/$slug")({
     const service = loaderData?.service;
     return {
       meta: [
-        { title: `${service?.title ?? "Service"} in Los Angeles | Extreme Plumbing` },
+        {
+          title:
+            (service && SERVICE_SEO_TITLES[service.slug]) ??
+            `${service?.title ?? "Service"} in Los Angeles | Extreme Plumbing`,
+        },
         { name: "description", content: service?.metaDescription ?? service?.description ?? "" },
       ],
       links: service ? [{ rel: "canonical", href: canonical(`/services/${service.slug}`) }] : [],
