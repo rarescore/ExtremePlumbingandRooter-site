@@ -11,7 +11,7 @@ export const Route = createFileRoute("/")({
   component: Home,
   head: () => ({
     meta: [
-      { title: "Extreme Plumbing & Rooter | 24/7 Los Angeles Plumber" },
+      { title: "Extreme Plumbing & Rooter | 24/7 Plumber Van Nuys & LA" },
       {
         name: "description",
         content:
