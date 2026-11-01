@@ -84,8 +84,9 @@ const MOVED: Record<string, string> = {
   "/blog": "/articles",
   "/faqs": "/faq",
   "/invoice": "/pay",
-  "/landing-page": "/",
-  "/thank-you": "/",
+  // old WP form-confirmation page; /book is the live form it confirmed. /landing-page
+  // (old ad landing page, no live equivalent) is intentionally left as a 404.
+  "/thank-you": "/book",
   "/valley-village": "/service-areas",
   // stale WordPress sitemaps still registered in GSC -> current sitemap
   "/sitemap_index.xml": "/sitemap.xml",
