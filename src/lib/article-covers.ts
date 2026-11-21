@@ -2,6 +2,19 @@ export type ArticleCover = { src: string; alt: string };
 
 // One unique, locally hosted stock photo per article (see public/media/blog/CREDITS.md).
 export const ARTICLE_COVERS: Record<string, ArticleCover> = {
+  "adu-plumbing-san-fernando-valley": {
+    src: "/media/blog/adu-plumbing-san-fernando-valley-1920.webp",
+    alt: "Illustrative garage conversion plumbing rough-in with supply lines and drain piping exposed between wall studs",
+  },
+  "polybutylene-pipes-van-nuys": {
+    src: "/media/blog/polybutylene-pipes-van-nuys-1920.webp",
+    alt: "Educational drawing of gray polybutylene water supply tubing in an exposed stud wall with pipe identification checklist",
+  },
+  "water-heater-earthquake-strapping-los-angeles": {
+    src: "/media/blog/water-heater-earthquake-strapping-los-angeles-1920.webp",
+    alt: "Educational diagram showing upper and lower seismic restraints secured to framing around a residential tank water heater",
+  },
+
   "copper-repipe-van-nuys-san-fernando-valley": {
     src: "/media/blog/copper-repipe-van-nuys-san-fernando-valley.webp",
     alt: "Copper and red and blue PEX water lines shown side by side in an opened wall.",
